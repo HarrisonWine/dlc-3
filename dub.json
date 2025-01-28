@@ -1,0 +1,9 @@
+{
+	"authors": [
+		"Harrison Wine"
+	],
+	"copyright": "Copyright © 2025, Harrison Wine",
+	"description": "A virtual machine for the LC-3 architecture written in Dlang",
+	"license": "MIT",
+	"name": "dlc-3"
+}
