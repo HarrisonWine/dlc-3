@@ -210,6 +210,18 @@ void and_instruction(ushort instruction)
 	update_flags(r0);
 }
 
+void br_instruction(ushort instruction)
+{	
+	ushort cond_flag = (instruction >> 9) & 0x7;
+
+	if (cond_flag & reg[Registers.COND])
+	{
+		ushort pc_offset = extend_sign(instruction & 0x1FF);
+		reg[Registers.PC] += pc_offset;
+	}
+}
+
+
 void not_instruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
