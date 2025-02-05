@@ -221,6 +221,33 @@ void br_instruction(ushort instruction)
 	}
 }
 
+/** 
+ * Note - function also handles RET, base_register is '7' in that case.
+ */
+void jmp_instruction(ushort instruction)
+{
+	ushort base_register = (instruction >> 6) & 0x7;
+
+	reg[Registers.PC] = reg[base_register];
+}
+
+void jsr_instruction(ushort instruction)
+{
+	// save linkage to calling routine
+	reg[7] = reg[Registers.PC];
+	if ((instruction >> 11) & 0x1)
+	{
+		/// JSR
+		ushort pc_offset = extend_sign(instruction & 0x7FF);
+		reg[Registers.PC] += pc_offset;
+	}
+	else 
+	{
+		/// JSRR
+		jmp_instruction(instruction);
+	}
+}
+
 
 void not_instruction(ushort instruction)
 {
