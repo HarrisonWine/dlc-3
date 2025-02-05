@@ -187,3 +187,9 @@ void add_instruction(ushort instruction)
 
 	update_flags(r0);
 }
+void trap_instruction(ushort instruction)
+{
+	ushort trap_vector = instruction & 0x8;
+	reg[7] = reg[Registers.PC];
+	reg[Registers.PC] = mem_read(trap_vector);
+}
