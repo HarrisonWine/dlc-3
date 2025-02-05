@@ -187,6 +187,38 @@ void add_instruction(ushort instruction)
 
 	update_flags(r0);
 }
+
+void and_instruction(ushort instruction)
+{
+	/// destination register (DR)
+	ushort r0 = (instruction >> 9) & 0x1;
+	/// first operand (SR1)
+	ushort r1 = (instruction >> 6) & 0x7;
+	/// immediate mode flag
+	ushort imm_flag = ( instruction >> 5) & 0x1;
+	
+	if (imm_flag)
+	{
+		ushort imm5 = extend_sign(instruction & 0x1F);
+		r0 = r1 & imm5;
+	}
+	else
+	{
+		ushort r2 = instruction & 0x7;
+		r0 = r1 & r2;
+	}
+	update_flags(r0);
+}
+
+void not_instruction(ushort instruction)
+{
+	ushort dr = (instruction >> 9) & 0x7; 
+	ushort sr = (instruction >> 6) & 0x7;
+	
+	reg[dr] = cast(ushort)~reg[sr];
+	update_flags(dr);
+}
+
 void st_instruction(ushort instruction)
 {
 	ushort sr = (instruction >> 9) & 0x7;
