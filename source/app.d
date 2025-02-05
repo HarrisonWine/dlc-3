@@ -187,6 +187,31 @@ void add_instruction(ushort instruction)
 
 	update_flags(r0);
 }
+void st_instruction(ushort instruction)
+{
+	ushort sr = (instruction >> 9) & 0x7;
+	ushort pc_offset = extend_sign(instruction & 0x1FF);
+
+	mem_write(reg[Registers.PC] + pc_offset, sr);
+}
+
+void sti_instruction(ushort instruction)
+{
+	ushort sr = (instruction >> 9) & 0x7;
+	ushort pc_offset = extend_sign(instruction & 0x1FF);
+
+	mem_write(mem_write(reg[Registers.PC] + pc_offset, sr));
+}
+
+void str_instruction(ushort instruction)
+{
+	ushort sr = (instruction >> 9) & 0x7;
+	ushort br = (instruction >> 6) & 0x7;
+	ushort pc_offset = extend_sign(instruction & 0x1FF);
+
+	mem_write(reg[br] + pc_offset, sr);
+}
+
 void trap_instruction(ushort instruction)
 {
 	ushort trap_vector = instruction & 0x8;
