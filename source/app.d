@@ -248,6 +248,42 @@ void jsr_instruction(ushort instruction)
 	}
 }
 
+void ld_instruction(ushort instruction)
+{
+	ushort dr = (instruction >> 9) & 0x7; 
+	ushort pc_offset = extend_sign(instruction & 0x1FF);
+
+	reg[dr] = mem_read(reg[Registers.PC] + pc_offset);
+	update_flags(dr);
+}
+
+void ldi_instruction(ushort instruction)
+{
+	ushort dr = (instruction >> 9) & 0x7; 
+	ushort pc_offset = extend_sign(instruction & 0x1FF);
+
+	reg[dr] = mem_read(mem_read(reg[Registers.PC] + pc_offset));
+	update_flags(dr);
+}
+
+void ldr_instruction(ushort instruction)
+{
+	ushort dr = (instruction >> 9) & 0x7; 
+	ushort br = (instruction >> 6) & 0x7;
+	ushort pc_offset = extend_sign(instruction & 0x3F);
+
+	reg[dr] = mem_read(br + pc_offset);
+	update_flags(dr);
+}
+
+void lea_instruction(ushort instruction)
+{
+	ushort dr = (instruction >> 9) & 0x7; 
+	ushort pc_offset = extend_sign(instruction & 0x1FF);
+
+	reg[dr] = cast(ushort)(reg[Registers.PC] + pc_offset);
+	update_flags(dr);
+}
 
 void not_instruction(ushort instruction)
 {
