@@ -448,7 +448,83 @@ void str_instruction(ushort instruction)
 
 void trap_instruction(ushort instruction)
 {
-	ushort trap_vector = instruction & 0x8;
+	ushort trap_vector = instruction & 0xFF;
 	reg[7] = reg[Registers.PC];
-	reg[Registers.PC] = mem_read(trap_vector);
+	with (TrapCodes) final switch (trap_vector)
+	{
+		case GETC:
+			/// TRAP GETC
+			trap_getc();
+			break;
+		case OUT:
+			/// TRAP OUT
+			trap_out();
+			break;
+		case PUTS:
+			/// TRAP PUTS
+			trap_puts();
+			break;
+		case IN:
+			/// TRAP IN
+			trap_in();
+			break;
+		case PUTSP:
+			/// TRAP PUTSP
+			trap_putsp();
+			break;
+		case HALT:
+			/// TRAP HALT
+			trap_halt();
+			break;
+	}
+}
+
+// BUG.hmw - suspect that this or the trap routine in general is not waiting on user input
+void trap_getc()
+{
+	reg[Registers.R0] = cast(ushort)readf("%c");
+	update_flags(Registers.R0);
+}
+
+void trap_out()
+{
+	ushort c = reg[Registers.R0] & 0xFF;
+	write(cast(char)c);
+	stdout.flush();
+}
+
+void trap_puts()
+{
+	ushort* c = memory.ptr + reg[Registers.R0];
+	while(*c) { write(cast(char)*c++); }
+	stdout.flush();
+}
+
+void trap_in()
+{
+	write("Enter a character: ");
+	trap_getc();
+	writeln(cast(char)reg[Registers.R0]);
+	stdout.flush();
+}
+
+void trap_putsp()
+{
+	ushort* c = memory.ptr + reg[Registers.R0];
+	while(*c)
+	{ 
+		char c1 = cast(char)*c & 0xFF;
+		write(c1); 
+		char c2 = cast(char)*c >> 8;
+		if (c2) { write(c2); }
+		c++;
+	}
+	stdout.flush();
+}
+
+void trap_halt()
+{
+	running = false;
+	writeln("HALT");
+	stdout.flush();
 }
