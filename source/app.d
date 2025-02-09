@@ -202,6 +202,30 @@ int read_image(string image_path)
 	}
 	else { return 0; }
 }
+
+void mem_write(ushort address, ushort val)
+{
+	memory[address] = val;
+}
+
+ushort mem_read(ushort address)
+{
+	if (address == MR_KBSR)
+	{
+		if (check_key())
+		{
+			memory[MR_KBSR] = (1 << 15);
+			memory[MR_KBSR] = cast(ushort)readf("%c");
+		}
+		else 
+		{
+			memory[MR_KBSR] = 0;	
+		}
+	}
+
+	return memory[address];
+}
+
 nothrow @nogc void restore_input_buffering()
 {
 	tcsetattr(STDIN_FILENO, TCSANOW, &original_tio);
