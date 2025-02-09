@@ -44,6 +44,7 @@ enum ConditionFlags
 }
 ushort[maxMemory] memory;
 ushort[Registers.COUNT] reg;
+bool running = true;
 
 int main(string[] args)
 {
