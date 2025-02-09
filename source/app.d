@@ -230,6 +230,13 @@ nothrow @nogc void restore_input_buffering()
 {
 	tcsetattr(STDIN_FILENO, TCSANOW, &original_tio);
 }
+
+extern(C) nothrow @nogc void handle_interrupt(int signal) 
+{
+	restore_input_buffering();
+	return;
+}
+
 /** 
  * 
  * Params:
