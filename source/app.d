@@ -154,6 +154,7 @@ int main(string[] args)
 		}
 	}
 	//Shutdown
+	restore_input_buffering();
 	return 0;
 }
 ushort swap16(ushort x)
@@ -171,6 +172,10 @@ unittest
 	ushort myBits = 0x0001;
 	myBits = swap16(myBits);
 	assert(myBits == 0x0100);	
+}
+nothrow @nogc void restore_input_buffering()
+{
+	tcsetattr(STDIN_FILENO, TCSANOW, &original_tio);
 }
 /** 
  * 
