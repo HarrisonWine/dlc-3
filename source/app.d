@@ -303,13 +303,13 @@ void add_instruction(ushort instruction)
 	
 	if (imm_flag)
 	{
-		ushort imm5 = sign_extend(instruction & 0x1F, 5);
-		reg[r0] = reg[r1] + imm5;
+		ushort imm5 = sign_extend(instruction & 0x1F);
+		reg[r0] = cast(ushort)(reg[r1] + imm5);
 	}
 	else 
 	{
 		ushort r2 = instruction & 0x7;
-		reg[r0] = reg[r1] + reg[r2];	
+		reg[r0] = cast(ushort)(reg[r1] + reg[r2]);	
 	}
 
 	update_flags(r0);
@@ -326,7 +326,7 @@ void and_instruction(ushort instruction)
 	
 	if (imm_flag)
 	{
-		ushort imm5 = extend_sign(instruction & 0x1F);
+		ushort imm5 = sign_extend(instruction & 0x1F);
 		r0 = r1 & imm5;
 	}
 	else
@@ -343,7 +343,7 @@ void br_instruction(ushort instruction)
 
 	if (cond_flag & reg[Registers.COND])
 	{
-		ushort pc_offset = extend_sign(instruction & 0x1FF);
+		ushort pc_offset = sign_extend(instruction & 0x1FF);
 		reg[Registers.PC] += pc_offset;
 	}
 }
@@ -365,7 +365,7 @@ void jsr_instruction(ushort instruction)
 	if ((instruction >> 11) & 0x1)
 	{
 		/// JSR
-		ushort pc_offset = extend_sign(instruction & 0x7FF);
+		ushort pc_offset = sign_extend(instruction & 0x7FF);
 		reg[Registers.PC] += pc_offset;
 	}
 	else 
@@ -378,18 +378,18 @@ void jsr_instruction(ushort instruction)
 void ld_instruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
-	ushort pc_offset = extend_sign(instruction & 0x1FF);
+	ushort pc_offset = sign_extend(instruction & 0x1FF);
 
-	reg[dr] = mem_read(reg[Registers.PC] + pc_offset);
+	reg[dr] = mem_read(cast(ushort)(reg[Registers.PC] + pc_offset));
 	update_flags(dr);
 }
 
 void ldi_instruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
-	ushort pc_offset = extend_sign(instruction & 0x1FF);
+	ushort pc_offset = sign_extend(instruction & 0x1FF);
 
-	reg[dr] = mem_read(mem_read(reg[Registers.PC] + pc_offset));
+	reg[dr] = mem_read(mem_read(cast(ushort)(reg[Registers.PC] + pc_offset)));
 	update_flags(dr);
 }
 
@@ -397,16 +397,16 @@ void ldr_instruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
 	ushort br = (instruction >> 6) & 0x7;
-	ushort pc_offset = extend_sign(instruction & 0x3F);
+	ushort pc_offset = sign_extend(instruction & 0x3F);
 
-	reg[dr] = mem_read(br + pc_offset);
+	reg[dr] = mem_read(cast(ushort)(br + pc_offset));
 	update_flags(dr);
 }
 
 void lea_instruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
-	ushort pc_offset = extend_sign(instruction & 0x1FF);
+	ushort pc_offset = sign_extend(instruction & 0x1FF);
 
 	reg[dr] = cast(ushort)(reg[Registers.PC] + pc_offset);
 	update_flags(dr);
@@ -424,26 +424,26 @@ void not_instruction(ushort instruction)
 void st_instruction(ushort instruction)
 {
 	ushort sr = (instruction >> 9) & 0x7;
-	ushort pc_offset = extend_sign(instruction & 0x1FF);
+	ushort pc_offset = sign_extend(instruction & 0x1FF);
 
-	mem_write(reg[Registers.PC] + pc_offset, sr);
+	mem_write(cast(ushort)(reg[Registers.PC] + pc_offset), sr);
 }
 
 void sti_instruction(ushort instruction)
 {
 	ushort sr = (instruction >> 9) & 0x7;
-	ushort pc_offset = extend_sign(instruction & 0x1FF);
+	ushort pc_offset = sign_extend(instruction & 0x1FF);
 
-	mem_write(mem_write(reg[Registers.PC] + pc_offset, sr));
+	mem_write(mem_read(cast(ushort)(reg[Registers.PC] + pc_offset)), sr);
 }
 
 void str_instruction(ushort instruction)
 {
 	ushort sr = (instruction >> 9) & 0x7;
 	ushort br = (instruction >> 6) & 0x7;
-	ushort pc_offset = extend_sign(instruction & 0x1FF);
+	ushort pc_offset = sign_extend(instruction & 0x1FF);
 
-	mem_write(reg[br] + pc_offset, sr);
+	mem_write(cast(ushort)(reg[br] + pc_offset), sr);
 }
 
 void trap_instruction(ushort instruction)
