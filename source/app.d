@@ -1,5 +1,4 @@
 import std.stdio;
-import std.stdlib;
 
 immutable maxMemory = 1 << 16;
 immutable pcStart = 0x3000;
@@ -96,7 +95,6 @@ int main(string[] args)
 	// set the PC to the start position
 	reg[Registers.PC] = pcStart;
 
-	bool running = true;
 	while(running)
 	{
 		// FETCH
@@ -146,8 +144,8 @@ int main(string[] args)
 			case TRAP:
 				trap_instruction(instruction);
 				break;
-			case Opcodes.RES: 
-			case Opcodes.RTI:
+			case RES: 
+			case RTI:
 			default:
 				return -1;
 				break;
@@ -157,6 +155,25 @@ int main(string[] args)
 	restore_input_buffering();
 	return 0;
 }
+
+
+void read_image_file(File file)
+{
+	// origin - location in memory to store image.
+	auto origin = file.rawRead(new ushort[1]);
+	origin[0] = origin[0].swap16;
+	//BUG.hmw - the contents of the file are not ever stored in *p
+	ushort max_read = cast(ushort)(maxMemory - origin[0]);
+	ushort* p = memory.ptr + origin[0];
+	
+	foreach (word; file.rawRead(new ushort[max_read]))
+	{
+		// convert to little endian
+		*p++ = swap16(word);
+	}
+
+}
+
 ushort swap16(ushort x)
 {
 	return cast(ushort)((x << 8) | (x >> 8));
@@ -172,6 +189,18 @@ unittest
 	ushort myBits = 0x0001;
 	myBits = swap16(myBits);
 	assert(myBits == 0x0100);	
+}
+
+int read_image(string image_path)
+{
+	auto file = File(image_path, "rb");
+	if (file.isOpen)
+	{
+		read_image_file(file);
+		file.close();
+		return 1;
+	}
+	else { return 0; }
 }
 nothrow @nogc void restore_input_buffering()
 {
