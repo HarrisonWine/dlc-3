@@ -226,6 +226,21 @@ ushort mem_read(ushort address)
 	return memory[address];
 }
 
+import core.sys.posix.termios: termios, TCSANOW, ICANON, ECHO, tcsetattr, tcgetattr;
+import core.sys.posix.sys.time: timeval;
+import core.sys.posix.sys.select: fd_set, FD_ZERO, FD_SET, SIGINT, select;
+import core.sys.posix.unistd: STDIN_FILENO;
+
+termios original_tio;
+
+void disable_input_buffering()
+{
+	tcgetattr(STDIN_FILENO, &original_tio);
+	termios new_tio = original_tio;
+	new_tio.c_lflag &= ~ICANON & ~ECHO;
+	tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
+}
+
 nothrow @nogc void restore_input_buffering()
 {
 	tcsetattr(STDIN_FILENO, TCSANOW, &original_tio);
