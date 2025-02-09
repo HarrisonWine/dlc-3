@@ -67,6 +67,9 @@ int main(string[] args)
 	}
 
 	//setup
+	import core.stdc.signal: signal;
+	signal(SIGINT, &handle_interrupt);
+	disable_input_buffering();
 
 	//Only one condition flag can be set at a given time; initially, set it to the Z flag.
 	reg[Registers.COND] = ConditionFlags.FL_ZRO;
