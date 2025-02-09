@@ -91,7 +91,7 @@ int main(string[] args)
 	disable_input_buffering();
 
 	//Only one condition flag can be set at a given time; initially, set it to the Z flag.
-	reg[Registers.COND] = ConditionFlags.FL_ZRO;
+	reg[Registers.COND] = ConditionFlags.ZRO;
 
 	// set the PC to the start position
 	reg[Registers.PC] = pcStart;
