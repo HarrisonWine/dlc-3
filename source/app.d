@@ -45,7 +45,7 @@ enum ConditionFlags
 ushort[maxMemory] memory;
 ushort[Registers.COUNT] reg;
 
-void main(string[] args)
+int main(string[] args)
 {
 	args = args[1 .. $];
 
@@ -54,6 +54,7 @@ void main(string[] args)
 	if (args.length < 1)
 	{
 		writeln("dlc3 [image-file1] ...");
+		return 2;
 	}
 
 	foreach (image; args)
@@ -127,11 +128,13 @@ void main(string[] args)
 			case Opcodes.RES: 
 			case Opcodes.RTI:
 			default:
+				return -1;
 				break;
 		}
 	}
 	//Shutdown
-	writeln("Edit source/app.d to start your project.");
+	return 0;
+}
 }
 /** 
  * 
