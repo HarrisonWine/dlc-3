@@ -231,6 +231,19 @@ nothrow @nogc void restore_input_buffering()
 	tcsetattr(STDIN_FILENO, TCSANOW, &original_tio);
 }
 
+ushort check_key()
+{
+	fd_set readfds;
+	FD_ZERO(&readfds);
+	FD_SET(STDIN_FILENO, &readfds);
+
+	timeval timeout;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 0;
+	
+	return select(1, &readfds, null, null, &timeout) != 0;
+}
+
 extern(C) nothrow @nogc void handle_interrupt(int signal) 
 {
 	restore_input_buffering();
