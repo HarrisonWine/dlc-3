@@ -80,50 +80,49 @@ int main(string[] args)
 		// FETCH
 		ushort instruction = mem_read(reg[Registers.PC]++);
 		ushort opcode = instruction >> 12;
-
-		switch (opcode)
+		with (Opcodes) switch (opcode)
 		{
-			case Opcodes.ADD:
+			case ADD:
 				add_instruction(instruction);
 				break;
-			case Opcodes.AND:
-
+			case AND:
+				and_instruction(instruction);
 				break;
-			case Opcodes.NOT:
-
+			case NOT:
+				not_instruction(instruction);
 				break;
-			case Opcodes.BR:
-
+			case BR:
+				br_instruction(instruction);
 				break;
-			case Opcodes.JMP:
-
+			case JMP:
+				jmp_instruction(instruction);
 				break;
-			case Opcodes.JSR:
-
+			case JSR:
+				jsr_instruction(instruction);
 				break;
-			case Opcodes.LD:
-
+			case LD:
+				ld_instruction(instruction);
 				break;
-			case Opcodes.LDI:
-
+			case LDI:
+				ldi_instruction(instruction);
 				break;
-			case Opcodes.LDR:
-
+			case LDR:
+				ldr_instruction(instruction);
 				break;
-			case Opcodes.LEA:
-
+			case LEA:
+				lea_instruction(instruction);
 				break;
-			case Opcodes.ST:
-
+			case ST:
+				st_instruction(instruction);
 				break;
-			case Opcodes.STI:
-
+			case STI:
+				sti_instruction(instruction);
 				break;
-			case Opcodes.STR:
-
+			case STR:
+				str_instruction(instruction);
 				break;
-			case Opcodes.TRAP:
-
+			case TRAP:
+				trap_instruction(instruction);
 				break;
 			case Opcodes.RES: 
 			case Opcodes.RTI:
