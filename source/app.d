@@ -135,6 +135,21 @@ int main(string[] args)
 	//Shutdown
 	return 0;
 }
+ushort swap16(ushort x)
+{
+	return cast(ushort)((x << 8) | (x >> 8));
+} 
+unittest
+{
+	ushort myBits = 0xB000;
+	myBits = swap16(myBits);
+	assert(myBits == 0xB0);	
+}
+unittest
+{
+	ushort myBits = 0x0001;
+	myBits = swap16(myBits);
+	assert(myBits == 0x0100);	
 }
 /** 
  * 
