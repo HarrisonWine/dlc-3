@@ -3,9 +3,9 @@ import std.stdlib;
 
 immutable maxMemory = 1 << 16;
 immutable pcStart = 0x3000;
-enum Registers 
+enum Registers : ushort
 {
-	R0, 
+	R0 = 0, 
 	R1, 
 	R2, 
 	R3, 
@@ -17,7 +17,7 @@ enum Registers
 	COND,
 	COUNT,
 }
-enum Opcodes 
+enum Opcodes : ushort
 {
 	BR,     /* branch */
 	ADD,    /* add  */
@@ -36,12 +36,30 @@ enum Opcodes
 	LEA,    /* load effective address */
 	TRAP,   /* execute trap */
 }
-enum ConditionFlags
+
+enum ConditionFlags : ushort
 {	
 	POS = 1 << 0, /* P */
 	ZRO = 1 << 1, /* Z */
 	NEG = 1 << 2, /* N */
 }
+
+enum TrapCodes : ushort
+{
+    GETC  = 0x20,  /* get character from keyboard, not echoed onto the terminal */
+    OUT   = 0x21,  /* output a character */
+    PUTS  = 0x22,  /* output a word string */
+    IN    = 0x23,  /* get character from keyboard, echoed onto the terminal */
+    PUTSP = 0x24,  /* output a byte string */
+    HALT  = 0x25   /* halt the program */
+}
+
+enum : ushort
+{
+    MR_KBSR = 0xFE00, /* keyboard status */
+    MR_KBDR = 0xFE02  /* keyboard data */
+}
+
 ushort[maxMemory] memory;
 ushort[Registers.COUNT] reg;
 bool running = true;
