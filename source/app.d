@@ -18,7 +18,7 @@ enum Registers : ushort
 }
 enum Opcodes : ushort
 {
-	BR,     /* branch */
+	BR=0,   /* branch */
 	ADD,    /* add  */
 	LD,     /* load */
 	ST,     /* store */
@@ -86,6 +86,8 @@ int main(string[] args)
 
 	//setup
 	import core.stdc.signal: signal;
+	// TODO.hmw - investigate handle_interrupt as it does not seem to be signaled properly
+	// might have to deal with how I'm using stdc
 	signal(SIGINT, &handle_interrupt);
 	disable_input_buffering();
 
@@ -100,6 +102,8 @@ int main(string[] args)
 		// FETCH
 		ushort instruction = mem_read(reg[Registers.PC]++);
 		ushort opcode = instruction >> 12;
+		writeln(cast(Opcodes)opcode);
+		//writefln("%X",reg[Registers.PC]);
 		with (Opcodes) switch (opcode)
 		{
 			case ADD:
@@ -273,7 +277,7 @@ extern(C) nothrow @nogc void handle_interrupt(int signal)
  *   bit_count = number of bits of binary value
  */
 ushort sign_extend(ushort x, ushort bit_count)
-	{
+{
 	return cast(ushort)(( ( x >> (bit_count-1) ) & 1) ? (x | (0xFFFF << bit_count)) : x);
 }
 
@@ -416,7 +420,7 @@ void jsr_instruction(ushort instruction)
 	if ((instruction >> 11) & 0x1)
 	{
 		/// JSR
-		ushort pc_offset = sign_extend(instruction & 0x7FF);
+		ushort pc_offset = sign_extend(instruction & 0x7FF, 11);
 		reg[Registers.PC] += pc_offset;
 	}
 	else 
@@ -429,7 +433,7 @@ void jsr_instruction(ushort instruction)
 void ld_instruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
-	ushort pc_offset = sign_extend(instruction & 0x1FF);
+	ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
 
 	reg[dr] = mem_read(cast(ushort)(reg[Registers.PC] + pc_offset));
 	update_flags(dr);
@@ -438,7 +442,7 @@ void ld_instruction(ushort instruction)
 void ldi_instruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
-	ushort pc_offset = sign_extend(instruction & 0x1FF);
+	ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
 
 	reg[dr] = mem_read(mem_read(cast(ushort)(reg[Registers.PC] + pc_offset)));
 	update_flags(dr);
@@ -448,7 +452,7 @@ void ldr_instruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
 	ushort br = (instruction >> 6) & 0x7;
-	ushort pc_offset = sign_extend(instruction & 0x3F);
+	ushort pc_offset = sign_extend(instruction & 0x3F, 6);
 
 	reg[dr] = mem_read(cast(ushort)(br + pc_offset));
 	update_flags(dr);
@@ -457,7 +461,7 @@ void ldr_instruction(ushort instruction)
 void lea_instruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
-	ushort pc_offset = sign_extend(instruction & 0x1FF);
+	ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
 
 	reg[dr] = cast(ushort)(reg[Registers.PC] + pc_offset);
 	update_flags(dr);
@@ -475,7 +479,7 @@ void not_instruction(ushort instruction)
 void st_instruction(ushort instruction)
 {
 	ushort sr = (instruction >> 9) & 0x7;
-	ushort pc_offset = sign_extend(instruction & 0x1FF);
+	ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
 
 	mem_write(cast(ushort)(reg[Registers.PC] + pc_offset), sr);
 }
@@ -483,7 +487,7 @@ void st_instruction(ushort instruction)
 void sti_instruction(ushort instruction)
 {
 	ushort sr = (instruction >> 9) & 0x7;
-	ushort pc_offset = sign_extend(instruction & 0x1FF);
+	ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
 
 	mem_write(mem_read(cast(ushort)(reg[Registers.PC] + pc_offset)), sr);
 }
@@ -492,7 +496,7 @@ void str_instruction(ushort instruction)
 {
 	ushort sr = (instruction >> 9) & 0x7;
 	ushort br = (instruction >> 6) & 0x7;
-	ushort pc_offset = sign_extend(instruction & 0x1FF);
+	ushort pc_offset = sign_extend(instruction & 0x1FF, 6);
 
 	mem_write(cast(ushort)(reg[br] + pc_offset), sr);
 }
@@ -533,27 +537,29 @@ void trap_instruction(ushort instruction)
 // BUG.hmw - suspect that this or the trap routine in general is not waiting on user input
 void trap_getc()
 {
-	reg[Registers.R0] = cast(ushort)readf("%c");
+	char tmp;
+	readf!" %c"(tmp);
+	reg[Registers.R0] = cast(ushort)(tmp);
 	update_flags(Registers.R0);
 }
 
 void trap_out()
 {
 	ushort c = reg[Registers.R0] & 0xFF;
-	write(cast(char)c);
+	stdout.write(cast(char)c);
 	stdout.flush();
 }
 
 void trap_puts()
 {
 	ushort* c = memory.ptr + reg[Registers.R0];
-	while(*c) { write(cast(char)*c++); }
+	while(*c) { stdout.write(cast(char)*c++); }
 	stdout.flush();
 }
 
 void trap_in()
 {
-	write("Enter a character: ");
+	stdout.write("Enter a character: ");
 	trap_getc();
 	writeln(cast(char)reg[Registers.R0]);
 	stdout.flush();
@@ -565,9 +571,9 @@ void trap_putsp()
 	while(*c)
 	{ 
 		char c1 = cast(char)*c & 0xFF;
-		write(c1); 
+		stdout.write(c1); 
 		char c2 = cast(char)*c >> 8;
-		if (c2) { write(c2); }
+		if (c2) { stdout.write(c2); }
 		c++;
 	}
 	stdout.flush();
