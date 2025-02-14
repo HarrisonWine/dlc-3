@@ -86,8 +86,6 @@ int main(string[] args)
 
 	//setup
 	import core.stdc.signal: signal;
-	// TODO.hmw - investigate handle_interrupt as it does not seem to be signaled properly
-	// might have to deal with how I'm using stdc
 	signal(SIGINT, &handle_interrupt);
 	disable_input_buffering();
 
@@ -102,8 +100,7 @@ int main(string[] args)
 		// FETCH
 		ushort instruction = mem_read(reg[Registers.PC]++);
 		ushort opcode = instruction >> 12;
-		writeln(cast(Opcodes)opcode);
-		//writefln("%X",reg[Registers.PC]);
+
 		with (Opcodes) switch (opcode)
 		{
 			case ADD:
@@ -151,15 +148,20 @@ int main(string[] args)
 			case RES: 
 			case RTI:
 			default:
-				return -1;
+				return exit_vm(-1);
 				break;
 		}
 	}
 	//Shutdown
-	restore_input_buffering();
-	return 0;
+	return exit_vm(0);
+	
 }
 
+int exit_vm(int exit_code)
+{
+	restore_input_buffering();
+	return exit_code;
+}
 
 void read_image_file(File file)
 {
