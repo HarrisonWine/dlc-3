@@ -306,24 +306,21 @@ void update_flags(ushort r)
 
 void add_instruction(ushort instruction)
 {
-	/// destination register (DR)
-	ushort r0 = (instruction >> 9) & 0x7;
-	/// first operand (SR1)
-	ushort r1 = (instruction >> 6) & 0x7;
-	/// immediate mode flag
+	ushort dr = (instruction >> 9) & 0x7;
+	ushort sr1 = (instruction >> 6) & 0x7;
 	ushort imm_flag = ( instruction >> 5) & 0x1;
 	
 	if (imm_flag)
 	{
 		ushort imm5 = sign_extend(instruction & 0x1F, 5);
-		reg[r0] = cast(ushort)(reg[r1] + imm5);
+		reg[dr] = cast(ushort)(reg[sr1] + imm5);
 	}
 	else 
 	{
-		ushort r2 = instruction & 0x7;
-		reg[r0] = cast(ushort)(reg[r1] + reg[r2]);	
+		ushort sr2 = instruction & 0x7;
+		reg[dr] = cast(ushort)(reg[sr1] + reg[sr2]);	
 	}
-	update_flags(r0);
+	update_flags(dr);
 }
 unittest
 {
@@ -334,24 +331,21 @@ unittest
 }
 void and_instruction(ushort instruction)
 {
-	/// destination register (DR)
-	ushort r0 = (instruction >> 9) & 0x7;
-	/// first operand (SR1)
-	ushort r1 = (instruction >> 6) & 0x7;
-	/// immediate mode flag
+	ushort dr = (instruction >> 9) & 0x7;
+	ushort sr1 = (instruction >> 6) & 0x7;
 	ushort imm_flag = ( instruction >> 5) & 0x1;
 	
 	if (imm_flag)
 	{
 		ushort imm5 = sign_extend(instruction & 0x1F, 5);
-		reg[r0] = reg[r1] & imm5;
+		reg[dr] = reg[sr1] & imm5;
 	}
 	else
 	{
-		ushort r2 = instruction & 0x7;
-		reg[r0] = reg[r1] & reg[r2];
+		ushort sr2 = instruction & 0x7;
+		reg[dr] = reg[sr1] & reg[sr2];
 	}
-	update_flags(r0);
+	update_flags(dr);
 }
 unittest
 {
