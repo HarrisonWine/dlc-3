@@ -367,11 +367,38 @@ void br_instruction(ushort instruction)
 
 	if (cond_flag & reg[Registers.COND])
 	{
-		ushort pc_offset = sign_extend(instruction & 0x1FF);
+		ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
 		reg[Registers.PC] += pc_offset;
 	}
 }
-
+unittest
+{
+	reg[Registers.COND] = ConditionFlags.ZRO;
+	reg[Registers.PC] = cast(ushort)1;
+	br_instruction(cast(ushort)0b0000_0_0_0_000000001);
+	assert(reg[Registers.PC] == 1);
+}
+unittest
+{
+	reg[Registers.COND] = ConditionFlags.NEG;
+	reg[Registers.PC] = cast(ushort)1;
+	br_instruction(cast(ushort)0b0000_1_0_0_000000001);
+	assert(reg[Registers.PC] == 2);
+}
+unittest
+{
+	reg[Registers.COND] = ConditionFlags.ZRO;
+	reg[Registers.PC] = cast(ushort)1;
+	br_instruction(cast(ushort)0b0000_1_1_0_000000101);
+	assert(reg[Registers.PC] == 6);
+}
+unittest
+{
+	reg[Registers.COND] = ConditionFlags.POS;
+	reg[Registers.PC] = cast(ushort)1;
+	br_instruction(cast(ushort)0b0000_1_1_1_000000001);
+	assert(reg[Registers.PC] == 2);
+}
 /** 
  * Note - function also handles RET, base_register is '7' in that case.
  */
