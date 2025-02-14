@@ -399,6 +399,7 @@ unittest
 	br_instruction(cast(ushort)0b0000_1_1_1_000000001);
 	assert(reg[Registers.PC] == 2);
 }
+
 /** 
  * Note - function also handles RET, base_register is '7' in that case.
  */
@@ -407,6 +408,14 @@ void jmp_instruction(ushort instruction)
 	ushort base_register = (instruction >> 6) & 0x7;
 
 	reg[Registers.PC] = reg[base_register];
+}
+unittest
+{
+	ushort inst = 0b1100_000_010_000000;
+	reg[Registers.PC] = cast(ushort)10;
+	reg[Registers.R2] = cast(ushort)25;
+	jmp_instruction(inst);
+	assert(reg[Registers.PC] == 25);
 }
 
 void jsr_instruction(ushort instruction)
@@ -425,6 +434,14 @@ void jsr_instruction(ushort instruction)
 		jmp_instruction(instruction);
 	}
 }
+unittest
+{
+	//TODO.hmw - add unit test for jsr
+}
+unittest
+{
+	//TODO.hmw - add unit test for jsrr
+}
 
 void ld_instruction(ushort instruction)
 {
@@ -433,6 +450,10 @@ void ld_instruction(ushort instruction)
 
 	reg[dr] = mem_read(cast(ushort)(reg[Registers.PC] + pc_offset));
 	update_flags(dr);
+}
+unittest
+{
+	//TODO.hmw - add unit test for ld
 }
 
 void ldi_instruction(ushort instruction)
@@ -443,6 +464,10 @@ void ldi_instruction(ushort instruction)
 	reg[dr] = mem_read(mem_read(cast(ushort)(reg[Registers.PC] + pc_offset)));
 	update_flags(dr);
 }
+unittest
+{
+	//TODO.hmw - add unit test for ldi
+}
 
 void ldr_instruction(ushort instruction)
 {
@@ -450,8 +475,16 @@ void ldr_instruction(ushort instruction)
 	ushort br = (instruction >> 6) & 0x7;
 	ushort pc_offset = sign_extend(instruction & 0x3F, 6);
 
-	reg[dr] = mem_read(cast(ushort)(br + pc_offset));
+	reg[dr] = mem_read(cast(ushort)(reg[br] + pc_offset));
 	update_flags(dr);
+}
+unittest
+{
+	ushort inst = 0b0110_100_010_000101;
+	reg[Registers.R2] = 5;
+	memory[10] = 10;
+	ldr_instruction(inst);
+	assert(reg[Registers.R4] == 10);
 }
 
 void lea_instruction(ushort instruction)
@@ -462,6 +495,10 @@ void lea_instruction(ushort instruction)
 	reg[dr] = cast(ushort)(reg[Registers.PC] + pc_offset);
 	update_flags(dr);
 }
+unittest
+{
+	//TODO.hmw - add unit test for lea
+}
 
 void not_instruction(ushort instruction)
 {
@@ -471,13 +508,21 @@ void not_instruction(ushort instruction)
 	reg[dr] = cast(ushort)~reg[sr];
 	update_flags(dr);
 }
+unittest
+{
+	//TODO.hmw - add unit test for not
+}
 
 void st_instruction(ushort instruction)
 {
 	ushort sr = (instruction >> 9) & 0x7;
 	ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
 
-	mem_write(cast(ushort)(reg[Registers.PC] + pc_offset), sr);
+	mem_write(cast(ushort)(reg[Registers.PC] + pc_offset), reg[sr]);
+}
+unittest
+{
+	//TODO.hmw - add unit test for st
 }
 
 void sti_instruction(ushort instruction)
@@ -485,16 +530,24 @@ void sti_instruction(ushort instruction)
 	ushort sr = (instruction >> 9) & 0x7;
 	ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
 
-	mem_write(mem_read(cast(ushort)(reg[Registers.PC] + pc_offset)), sr);
+	mem_write(mem_read(cast(ushort)(reg[Registers.PC] + pc_offset)), reg[sr]);
+}
+unittest
+{
+	//TODO.hmw - add unit test for sti
 }
 
 void str_instruction(ushort instruction)
 {
 	ushort sr = (instruction >> 9) & 0x7;
 	ushort br = (instruction >> 6) & 0x7;
-	ushort pc_offset = sign_extend(instruction & 0x1FF, 6);
+	ushort pc_offset = sign_extend(instruction & 0x3F, 6);
 
-	mem_write(cast(ushort)(reg[br] + pc_offset), sr);
+	mem_write(cast(ushort)(reg[br] + pc_offset), reg[sr]);
+}
+unittest
+{
+	//TODO.hmw - add unit test for str
 }
 
 void trap_instruction(ushort instruction)
@@ -557,7 +610,6 @@ void trap_in()
 {
 	stdout.write("Enter a character: ");
 	trap_getc();
-	writeln(cast(char)reg[Registers.R0]);
 	stdout.flush();
 }
 
