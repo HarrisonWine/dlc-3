@@ -162,7 +162,6 @@ void read_image_file(File file)
 	// origin - location in memory to store image.
 	auto origin = file.rawRead(new ushort[1]);
 	origin[0] = origin[0].swap16;
-	//BUG.hmw - the contents of the file are not ever stored in *p
 	ushort max_read = cast(ushort)(maxMemory - origin[0]);
 	ushort* p = memory.ptr + origin[0];
 	
@@ -215,7 +214,9 @@ ushort mem_read(ushort address)
 		if (check_key())
 		{
 			memory[MR_KBSR] = (1 << 15);
-			memory[MR_KBSR] = cast(ushort)readf("%c");
+			char tmp;
+			readf!" %c"(tmp);
+			memory[MR_KBDR] = cast(ushort)(tmp);
 		}
 		else 
 		{
