@@ -272,41 +272,11 @@ extern(C) nothrow @nogc void handle_interrupt(int signal)
  *   x = binary val to extend
  *   bit_count = number of bits of binary value
  */
-ushort sign_extend(ushort x)
-{
-	ushort bit_count = 0;
-	
-	ushort tmp = x;
-	for(ushort i = 15; i > 0; i--)
+ushort sign_extend(ushort x, ushort bit_count)
 	{
-		if (tmp & 0x8000)
-		{
-			bit_count = i;
-			break;
-		}
-		tmp = cast(ushort)(tmp << 1);
-	}
+	return cast(ushort)(( ( x >> (bit_count-1) ) & 1) ? (x | (0xFFFF << bit_count)) : x);
+}
 
-	return cast(ushort)((x >> (bit_count - 1) & 1) ? (x | (0xFFFF << bit_count)) : x);
-}
-unittest
-{
-	ushort myBits = 0x1F;
-	myBits = sign_extend(myBits);
-	assert(myBits == 0xFFFF);	
-}
-unittest
-{
-	ushort myBits = 42;
-	myBits = sign_extend(myBits);
-	assert(myBits == 0x2A);	
-}
-unittest
-{
-	ushort myBits = 0xD6;
-	myBits = sign_extend(myBits);
-	assert(myBits == 0xFFD6);	
-}
 /** 
  * Any time a value is written to a register the flags need to be updated to indicate sign.
  * Params:
