@@ -55,8 +55,8 @@ enum TrapCodes : ushort
 
 enum : ushort
 {
-    MR_KBSR = 0xFE00, /* keyboard status */
-    MR_KBDR = 0xFE02  /* keyboard data */
+    MRKBSR = 0xFE00, /* keyboard status */
+    MRKBDR = 0xFE02  /* keyboard data */
 }
 
 ushort[maxMemory] memory;
@@ -67,8 +67,8 @@ int main(string[] args)
 {
 	args = args[1 .. $];
 
-
 	//load arguments
+	
 	if (args.length < 1)
 	{
 		writeln("dlc3 [image-file1] ...");
@@ -77,17 +77,17 @@ int main(string[] args)
 
 	foreach (image; args)
 	{
-		if (!read_image(image))
+		if (!readImage(image))
 		{
 			writeln("ERROR: failed to load image: ", image);
 			return 1;
 		}
 	}
 
-	//setup
+	///setup:
 	import core.stdc.signal: signal;
-	signal(SIGINT, &handle_interrupt);
-	disable_input_buffering();
+	signal(SIGINT, &handleInterrupt);
+	disableInputBuffering();
 
 	//Only one condition flag can be set at a given time; initially, set it to the Z flag.
 	reg[Registers.COND] = ConditionFlags.ZRO;
@@ -97,81 +97,86 @@ int main(string[] args)
 
 	while(running)
 	{
-		// FETCH
-		ushort instruction = mem_read(reg[Registers.PC]++);
+		///FETCH:
+		ushort instruction = memRead(reg[Registers.PC]++);
 		ushort opcode = instruction >> 12;
 
 		with (Opcodes) switch (opcode)
 		{
 			case ADD:
-				add_instruction(instruction);
+				addInstruction(instruction);
 				break;
 			case AND:
-				and_instruction(instruction);
+				andInstruction(instruction);
 				break;
 			case NOT:
-				not_instruction(instruction);
+				notInstruction(instruction);
 				break;
 			case BR:
-				br_instruction(instruction);
+				brInstruction(instruction);
 				break;
 			case JMP:
-				jmp_instruction(instruction);
+				jmpInstruction(instruction);
 				break;
 			case JSR:
-				jsr_instruction(instruction);
+				jsrInstruction(instruction);
 				break;
 			case LD:
-				ld_instruction(instruction);
+				ldInstruction(instruction);
 				break;
 			case LDI:
-				ldi_instruction(instruction);
+				ldiInstruction(instruction);
 				break;
 			case LDR:
-				ldr_instruction(instruction);
+				ldrInstruction(instruction);
 				break;
 			case LEA:
-				lea_instruction(instruction);
+				leaInstruction(instruction);
 				break;
 			case ST:
-				st_instruction(instruction);
+				stInstruction(instruction);
 				break;
 			case STI:
-				sti_instruction(instruction);
+				stiInstruction(instruction);
 				break;
 			case STR:
-				str_instruction(instruction);
+				strInstruction(instruction);
 				break;
 			case TRAP:
-				trap_instruction(instruction);
+				trapInstruction(instruction);
 				break;
 			case RES: 
 			case RTI:
 			default:
-				return exit_vm(-1);
+				return exitVM(-1);
 				break;
 		}
 	}
 	//Shutdown
-	return exit_vm(0);
+	return exitVM(0);
 	
 }
 
-int exit_vm(int exit_code)
+int exitVM(int exitCode)
 {
-	restore_input_buffering();
-	return exit_code;
+	restoreInputBuffering();
+	return exitCode;
 }
 
-void read_image_file(File file)
+/** 
+ * 
+ * Params:
+ *   file = lc3 obj file
+ */
+void readImageFile(File file)
 {
 	// origin - location in memory to store image.
 	auto origin = file.rawRead(new ushort[1]);
 	origin[0] = origin[0].swap16;
-	ushort max_read = cast(ushort)(maxMemory - origin[0]);
+	ushort maxRead = cast(ushort)(maxMemory - origin[0]);
 	ushort* p = memory.ptr + origin[0];
 	
-	foreach (word; file.rawRead(new ushort[max_read]))
+	foreach (word; file.rawRead(new ushort[maxRead]))
 	{
 		// convert to little endian
 		*p++ = swap16(word);
@@ -196,37 +201,37 @@ unittest
 	assert(myBits == 0x0100);	
 }
 
-int read_image(string image_path)
+int readImage(string imagePath)
 {
-	auto file = File(image_path, "rb");
+	auto file = File(imagePath, "rb");
 	if (file.isOpen)
 	{
-		read_image_file(file);
+		readImageFile(file);
 		file.close();
 		return 1;
 	}
 	else { return 0; }
 }
 
-void mem_write(ushort address, ushort val)
+void memWrite(ushort address, ushort val)
 {
 	memory[address] = val;
 }
 
-ushort mem_read(ushort address)
+ushort memRead(ushort address)
 {
-	if (address == MR_KBSR)
+	if (address == MRKBSR)
 	{
-		if (check_key())
+		if (checkKey())
 		{
-			memory[MR_KBSR] = (1 << 15);
+			memory[MRKBSR] = (1 << 15);
 			char tmp;
 			readf!" %c"(tmp);
-			memory[MR_KBDR] = cast(ushort)(tmp);
+			memory[MRKBDR] = cast(ushort)(tmp);
 		}
 		else 
 		{
-			memory[MR_KBSR] = 0;	
+			memory[MRKBSR] = 0;	
 		}
 	}
 
@@ -238,22 +243,22 @@ import core.sys.posix.sys.time: timeval;
 import core.sys.posix.sys.select: fd_set, FD_ZERO, FD_SET, SIGINT, select;
 import core.sys.posix.unistd: STDIN_FILENO;
 
-termios original_tio;
+termios originalTio;
 
-void disable_input_buffering()
+void disableInputBuffering()
 {
-	tcgetattr(STDIN_FILENO, &original_tio);
-	termios new_tio = original_tio;
-	new_tio.c_lflag &= ~ICANON & ~ECHO;
-	tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
+	tcgetattr(STDIN_FILENO, &originalTio);
+	termios newTio = originalTio;
+	newTio.c_lflag &= ~ICANON & ~ECHO;
+	tcsetattr(STDIN_FILENO, TCSANOW, &newTio);
 }
 
-nothrow @nogc void restore_input_buffering()
+nothrow @nogc void restoreInputBuffering()
 {
-	tcsetattr(STDIN_FILENO, TCSANOW, &original_tio);
+	tcsetattr(STDIN_FILENO, TCSANOW, &originalTio);
 }
 
-ushort check_key()
+ushort checkKey()
 {
 	fd_set readfds;
 	FD_ZERO(&readfds);
@@ -266,9 +271,9 @@ ushort check_key()
 	return select(1, &readfds, null, null, &timeout) != 0;
 }
 
-extern(C) nothrow @nogc void handle_interrupt(int signal) 
+extern(C) nothrow @nogc void handleInterrupt(int signal) 
 {
-	restore_input_buffering();
+	restoreInputBuffering();
 	return;
 }
 
@@ -276,11 +281,11 @@ extern(C) nothrow @nogc void handle_interrupt(int signal)
  * 
  * Params:
  *   x = binary val to extend
- *   bit_count = number of bits of binary value
+ *   bitCount = number of bits of binary value
  */
-ushort sign_extend(ushort x, ushort bit_count)
+ushort signExtend(ushort x, ushort bitCount)
 {
-	return cast(ushort)(( ( x >> (bit_count-1) ) & 1) ? (x | (0xFFFF << bit_count)) : x);
+	return cast(ushort)(( ( x >> (bitCount-1) ) & 1) ? (x | (0xFFFF << bitCount)) : x);
 }
 
 /** 
@@ -288,7 +293,7 @@ ushort sign_extend(ushort x, ushort bit_count)
  * Params:
  *   r = register
  */
-void update_flags(ushort r)
+void updateFlags(ushort r)
 {
 	if (reg[r] == 0)
 	{
@@ -304,15 +309,16 @@ void update_flags(ushort r)
 	}
 }
 
-void add_instruction(ushort instruction)
+// TODO.hmw - break out instruction functions into their own module
+void addInstruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7;
 	ushort sr1 = (instruction >> 6) & 0x7;
-	ushort imm_flag = ( instruction >> 5) & 0x1;
+	ushort immFlag = ( instruction >> 5) & 0x1;
 	
-	if (imm_flag)
+	if (immFlag)
 	{
-		ushort imm5 = sign_extend(instruction & 0x1F, 5);
+		ushort imm5 = signExtend(instruction & 0x1F, 5);
 		reg[dr] = cast(ushort)(reg[sr1] + imm5);
 	}
 	else 
@@ -320,24 +326,24 @@ void add_instruction(ushort instruction)
 		ushort sr2 = instruction & 0x7;
 		reg[dr] = cast(ushort)(reg[sr1] + reg[sr2]);	
 	}
-	update_flags(dr);
+	updateFlags(dr);
 }
 unittest
 {
 	reg[Registers.R4] = cast(ushort)2;
 	reg[Registers.R3] = cast(ushort)2;
-	add_instruction(cast(ushort)0b0001_010_011_0_00_100);
+	addInstruction(cast(ushort)0b0001_010_011_0_00_100);
 	assert(reg[Registers.R2] == 4);
 }
-void and_instruction(ushort instruction)
+void andInstruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7;
 	ushort sr1 = (instruction >> 6) & 0x7;
-	ushort imm_flag = ( instruction >> 5) & 0x1;
+	ushort immFlag = ( instruction >> 5) & 0x1;
 	
-	if (imm_flag)
+	if (immFlag)
 	{
-		ushort imm5 = sign_extend(instruction & 0x1F, 5);
+		ushort imm5 = signExtend(instruction & 0x1F, 5);
 		reg[dr] = reg[sr1] & imm5;
 	}
 	else
@@ -345,93 +351,93 @@ void and_instruction(ushort instruction)
 		ushort sr2 = instruction & 0x7;
 		reg[dr] = reg[sr1] & reg[sr2];
 	}
-	update_flags(dr);
+	updateFlags(dr);
 }
 unittest
 {
 	reg[Registers.R4] = cast(ushort)0b101;
 	reg[Registers.R3] = cast(ushort)0b110;
-	and_instruction(cast(ushort)0b0101_010_011_0_00_100);
+	andInstruction(cast(ushort)0b0101_010_011_0_00_100);
 	assert(reg[Registers.R2] == 0b100);
 }
 unittest
 {
 	reg[Registers.R3] = cast(ushort)0b101;
-	and_instruction(cast(ushort)0b0101_010_011_1_00111);
+	andInstruction(cast(ushort)0b0101_010_011_1_00111);
 	assert(reg[Registers.R2] == 0b101);
 }
 
-void br_instruction(ushort instruction)
+void brInstruction(ushort instruction)
 {	
-	ushort cond_flag = (instruction >> 9) & 0x7;
+	ushort condFlag = (instruction >> 9) & 0x7;
 
-	if (cond_flag & reg[Registers.COND])
+	if (condFlag & reg[Registers.COND])
 	{
-		ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
-		reg[Registers.PC] += pc_offset;
+		ushort pcOffset = signExtend(instruction & 0x1FF, 9);
+		reg[Registers.PC] += pcOffset;
 	}
 }
 unittest
 {
 	reg[Registers.COND] = ConditionFlags.ZRO;
 	reg[Registers.PC] = cast(ushort)1;
-	br_instruction(cast(ushort)0b0000_0_0_0_000000001);
+	brInstruction(cast(ushort)0b0000_0_0_0_000000001);
 	assert(reg[Registers.PC] == 1);
 }
 unittest
 {
 	reg[Registers.COND] = ConditionFlags.NEG;
 	reg[Registers.PC] = cast(ushort)1;
-	br_instruction(cast(ushort)0b0000_1_0_0_000000001);
+	brInstruction(cast(ushort)0b0000_1_0_0_000000001);
 	assert(reg[Registers.PC] == 2);
 }
 unittest
 {
 	reg[Registers.COND] = ConditionFlags.ZRO;
 	reg[Registers.PC] = cast(ushort)1;
-	br_instruction(cast(ushort)0b0000_1_1_0_000000101);
+	brInstruction(cast(ushort)0b0000_1_1_0_000000101);
 	assert(reg[Registers.PC] == 6);
 }
 unittest
 {
 	reg[Registers.COND] = ConditionFlags.POS;
 	reg[Registers.PC] = cast(ushort)1;
-	br_instruction(cast(ushort)0b0000_1_1_1_000000001);
+	brInstruction(cast(ushort)0b0000_1_1_1_000000001);
 	assert(reg[Registers.PC] == 2);
 }
 
 /** 
- * Note - function also handles RET, base_register is '7' in that case.
+ * Note - function also handles RET, baseRegister is '7' in that case.
  */
-void jmp_instruction(ushort instruction)
+void jmpInstruction(ushort instruction)
 {
-	ushort base_register = (instruction >> 6) & 0x7;
+	ushort baseRegister = (instruction >> 6) & 0x7;
 
-	reg[Registers.PC] = reg[base_register];
+	reg[Registers.PC] = reg[baseRegister];
 }
 unittest
 {
 	ushort inst = 0b1100_000_010_000000;
 	reg[Registers.PC] = cast(ushort)10;
 	reg[Registers.R2] = cast(ushort)25;
-	jmp_instruction(inst);
+	jmpInstruction(inst);
 	assert(reg[Registers.PC] == 25);
 }
 
-void jsr_instruction(ushort instruction)
+void jsrInstruction(ushort instruction)
 {
 	// save linkage to calling routine
 	reg[7] = reg[Registers.PC];
 	if ((instruction >> 11) & 0x1)
 	{
 		/// JSR
-		ushort pc_offset = sign_extend(instruction & 0x7FF, 11);
-		reg[Registers.PC] += pc_offset;
+		ushort pcOffset = signExtend(instruction & 0x7FF, 11);
+		reg[Registers.PC] += pcOffset;
 	}
 	else 
 	{
 		/// JSRR
-		jmp_instruction(instruction);
+		jmpInstruction(instruction);
 	}
 }
 unittest
@@ -443,177 +449,178 @@ unittest
 	//TODO.hmw - add unit test for jsrr
 }
 
-void ld_instruction(ushort instruction)
+void ldInstruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
-	ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
+	ushort pcOffset = signExtend(instruction & 0x1FF, 9);
 
-	reg[dr] = mem_read(cast(ushort)(reg[Registers.PC] + pc_offset));
-	update_flags(dr);
+	reg[dr] = memRead(cast(ushort)(reg[Registers.PC] + pcOffset));
+	updateFlags(dr);
 }
 unittest
 {
 	//TODO.hmw - add unit test for ld
 }
 
-void ldi_instruction(ushort instruction)
+void ldiInstruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
-	ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
+	ushort pcOffset = signExtend(instruction & 0x1FF, 9);
 
-	reg[dr] = mem_read(mem_read(cast(ushort)(reg[Registers.PC] + pc_offset)));
-	update_flags(dr);
+	reg[dr] = memRead(memRead(cast(ushort)(reg[Registers.PC] + pcOffset)));
+	updateFlags(dr);
 }
 unittest
 {
 	//TODO.hmw - add unit test for ldi
 }
 
-void ldr_instruction(ushort instruction)
+void ldrInstruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
 	ushort br = (instruction >> 6) & 0x7;
-	ushort pc_offset = sign_extend(instruction & 0x3F, 6);
+	ushort pcOffset = signExtend(instruction & 0x3F, 6);
 
-	reg[dr] = mem_read(cast(ushort)(reg[br] + pc_offset));
-	update_flags(dr);
+	reg[dr] = memRead(cast(ushort)(reg[br] + pcOffset));
+	updateFlags(dr);
 }
 unittest
 {
 	ushort inst = 0b0110_100_010_000101;
 	reg[Registers.R2] = 5;
 	memory[10] = 10;
-	ldr_instruction(inst);
+	ldrInstruction(inst);
 	assert(reg[Registers.R4] == 10);
 }
 
-void lea_instruction(ushort instruction)
+void leaInstruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
-	ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
+	ushort pcOffset = signExtend(instruction & 0x1FF, 9);
 
-	reg[dr] = cast(ushort)(reg[Registers.PC] + pc_offset);
-	update_flags(dr);
+	reg[dr] = cast(ushort)(reg[Registers.PC] + pcOffset);
+	updateFlags(dr);
 }
 unittest
 {
 	//TODO.hmw - add unit test for lea
 }
 
-void not_instruction(ushort instruction)
+void notInstruction(ushort instruction)
 {
 	ushort dr = (instruction >> 9) & 0x7; 
 	ushort sr = (instruction >> 6) & 0x7;
 	
 	reg[dr] = cast(ushort)~reg[sr];
-	update_flags(dr);
+	updateFlags(dr);
 }
 unittest
 {
 	//TODO.hmw - add unit test for not
 }
 
-void st_instruction(ushort instruction)
+void stInstruction(ushort instruction)
 {
 	ushort sr = (instruction >> 9) & 0x7;
-	ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
+	ushort pcOffset = signExtend(instruction & 0x1FF, 9);
 
-	mem_write(cast(ushort)(reg[Registers.PC] + pc_offset), reg[sr]);
+	memWrite(cast(ushort)(reg[Registers.PC] + pcOffset), reg[sr]);
 }
 unittest
 {
 	//TODO.hmw - add unit test for st
 }
 
-void sti_instruction(ushort instruction)
+void stiInstruction(ushort instruction)
 {
 	ushort sr = (instruction >> 9) & 0x7;
-	ushort pc_offset = sign_extend(instruction & 0x1FF, 9);
+	ushort pcOffset = signExtend(instruction & 0x1FF, 9);
 
-	mem_write(mem_read(cast(ushort)(reg[Registers.PC] + pc_offset)), reg[sr]);
+	memWrite(memRead(cast(ushort)(reg[Registers.PC] + pcOffset)), reg[sr]);
 }
 unittest
 {
 	//TODO.hmw - add unit test for sti
 }
 
-void str_instruction(ushort instruction)
+void strInstruction(ushort instruction)
 {
 	ushort sr = (instruction >> 9) & 0x7;
 	ushort br = (instruction >> 6) & 0x7;
-	ushort pc_offset = sign_extend(instruction & 0x3F, 6);
+	ushort pcOffset = signExtend(instruction & 0x3F, 6);
 
-	mem_write(cast(ushort)(reg[br] + pc_offset), reg[sr]);
+	memWrite(cast(ushort)(reg[br] + pcOffset), reg[sr]);
 }
 unittest
 {
 	//TODO.hmw - add unit test for str
 }
 
-void trap_instruction(ushort instruction)
+// TODO.hmw - break out trap instructions into their own module
+// TODO.hmw - develop the trap vectors utilizing dlangs inline asm functionality
+void trapInstruction(ushort instruction)
 {
-	ushort trap_vector = instruction & 0xFF;
+	ushort trapVector = instruction & 0xFF;
 	reg[7] = reg[Registers.PC];
-	with (TrapCodes) final switch (trap_vector)
+	with (TrapCodes) final switch (trapVector)
 	{
 		case GETC:
 			/// TRAP GETC
-			trap_getc();
+			trapGetc();
 			break;
 		case OUT:
 			/// TRAP OUT
-			trap_out();
+			trapOut();
 			break;
 		case PUTS:
 			/// TRAP PUTS
-			trap_puts();
+			trapPuts();
 			break;
 		case IN:
 			/// TRAP IN
-			trap_in();
+			trapIn();
 			break;
 		case PUTSP:
 			/// TRAP PUTSP
-			trap_putsp();
+			trapPutsp();
 			break;
 		case HALT:
 			/// TRAP HALT
-			trap_halt();
+			trapHalt();
 			break;
 	}
 }
 
-// BUG.hmw - suspect that this or the trap routine in general is not waiting on user input
-void trap_getc()
+void trapGetc()
 {
 	char tmp;
 	readf!" %c"(tmp);
 	reg[Registers.R0] = cast(ushort)(tmp);
-	update_flags(Registers.R0);
+	updateFlags(Registers.R0);
 }
 
-void trap_out()
+void trapOut()
 {
 	ushort c = reg[Registers.R0] & 0xFF;
 	stdout.write(cast(char)c);
 	stdout.flush();
 }
 
-void trap_puts()
+void trapPuts()
 {
 	ushort* c = memory.ptr + reg[Registers.R0];
 	while(*c) { stdout.write(cast(char)*c++); }
 	stdout.flush();
 }
 
-void trap_in()
+void trapIn()
 {
 	stdout.write("Enter a character: ");
-	trap_getc();
+	trapGetc();
 	stdout.flush();
 }
 
-void trap_putsp()
+void trapPutsp()
 {
 	ushort* c = memory.ptr + reg[Registers.R0];
 	while(*c)
@@ -627,7 +634,7 @@ void trap_putsp()
 	stdout.flush();
 }
 
-void trap_halt()
+void trapHalt()
 {
 	running = false;
 	writeln("HALT");
