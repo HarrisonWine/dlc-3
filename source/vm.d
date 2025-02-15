@@ -1,3 +1,5 @@
+module vm;
+
 import std.stdio;
 
 immutable maxMemory = 1 << 16;
